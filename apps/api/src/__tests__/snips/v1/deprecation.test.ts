@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from "@jest/globals";
 import request from "supertest";
-import { v7 as uuidv7 } from "uuid";
 import { TEST_API_URL } from "../lib";
 import { idmux, Identity } from "./lib";
 
@@ -33,7 +32,7 @@ describe("Deprecation warnings on legacy endpoints", () => {
 
   it("GET /v1/llmstxt/:jobId still emits warning on 404", async () => {
     const res = await request(TEST_API_URL)
-      .get(`/v1/llmstxt/${uuidv7()}`)
+      .get(`/v1/llmstxt/${crypto.randomUUID()}`)
       .set("Authorization", `Bearer ${identity.apiKey}`);
 
     expect(res.statusCode).toBe(404);
