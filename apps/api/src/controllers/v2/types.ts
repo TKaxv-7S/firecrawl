@@ -1364,6 +1364,18 @@ export type OngoingCrawlsResponse =
       }[];
     };
 
+export type OngoingBatchScrapesResponse =
+  | ErrorResponse
+  | {
+      success: true;
+      batchScrapes: {
+        id: string;
+        teamId: string;
+        created_at: string;
+        urlCount: number;
+      }[];
+    };
+
 export type CrawlErrorsResponse =
   | ErrorResponse
   | {
