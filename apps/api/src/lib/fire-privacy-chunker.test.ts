@@ -89,4 +89,14 @@ describe("chunkMarkdown", () => {
     expect(DEFAULT_MAX_CHARS).toBeLessThan(32_000);
     expect(DEFAULT_MAX_CHARS).toBeGreaterThanOrEqual(20_000);
   });
+
+  it("rejects non-positive maxChars (would otherwise infinite-loop)", () => {
+    expect(() => chunkMarkdown("abc", { maxChars: 0 })).toThrow(RangeError);
+    expect(() => chunkMarkdown("abc", { maxChars: -1 })).toThrow(RangeError);
+  });
+
+  it("rejects non-positive maxBytes", () => {
+    expect(() => chunkMarkdown("abc", { maxBytes: 0 })).toThrow(RangeError);
+    expect(() => chunkMarkdown("abc", { maxBytes: -10 })).toThrow(RangeError);
+  });
 });

@@ -86,7 +86,9 @@ async function deriveMarkdownFromHTML(
   // - json format requires markdown (for LLM extraction)
   // - summary format requires markdown (for summarization)
   // - question/highlights/query formats require markdown (for page-level answers)
-  // - pii format redacts markdown (spans are markdown char offsets)
+  // - pii format redacts markdown (spans are markdown char offsets) — but
+  //   only when redactPII is actually enabled; otherwise performRedactPII
+  //   bails immediately and the derived markdown is wasted work.
   const hasMarkdown = hasFormatOfType(meta.options.formats, "markdown");
   const hasChangeTracking = hasFormatOfType(
     meta.options.formats,
@@ -97,7 +99,8 @@ async function deriveMarkdownFromHTML(
   const hasQuestion = hasFormatOfType(meta.options.formats, "question");
   const hasHighlights = hasFormatOfType(meta.options.formats, "highlights");
   const hasQuery = hasFormatOfType(meta.options.formats, "query");
-  const hasPii = hasFormatOfType(meta.options.formats, "pii");
+  const hasPii =
+    hasFormatOfType(meta.options.formats, "pii") && !!meta.options.redactPII;
   if (
     !hasMarkdown &&
     !hasChangeTracking &&
