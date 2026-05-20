@@ -95,39 +95,12 @@ const JUDGE_MAX_ATTEMPTS = 3;
 const JUDGE_BACKOFF_MS = [300, 800];
 const judgeModel = google(JUDGE_MODEL_NAME);
 
-// Transient-error classifier for retry decisions. Relies on structured
-// error fields only (HTTP status code, Node syscall `code`, abort/timeout
-// name). Avoids matching on message strings, which are locale- and
-// SDK-version-dependent and easy to over-match (e.g. "network" hits any
-// error mentioning networking in passing).
-const RETRY_HTTP_STATUSES = new Set([408, 425, 429]);
-const RETRY_SYSCALL_CODES = new Set([
-  "ECONNRESET",
-  "ECONNREFUSED",
-  "ETIMEDOUT",
-  "EAI_AGAIN",
-  "ENETUNREACH",
-  "EPIPE",
-]);
-
 function isTransientJudgeError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
-  const err = error as {
-    name?: string;
-    code?: string;
-    statusCode?: number;
-    status?: number;
-  };
+  const err = error as { name?: string; statusCode?: number; status?: number };
   if (err.name === "AbortError" || err.name === "TimeoutError") return true;
-  if (typeof err.code === "string" && RETRY_SYSCALL_CODES.has(err.code)) {
-    return true;
-  }
-  const httpStatus = err.statusCode ?? err.status;
-  if (typeof httpStatus === "number") {
-    if (RETRY_HTTP_STATUSES.has(httpStatus)) return true;
-    if (httpStatus >= 500 && httpStatus <= 599) return true;
-  }
-  return false;
+  const status = err.statusCode ?? err.status;
+  return status === 429 || (typeof status === "number" && status >= 500);
 }
 
 async function callGemini(args: {
@@ -236,8 +209,12 @@ export async function judgeChange(
         fields: [],
       };
     }
+    const meaningful =
+      parsed.meaningful === true || parsed.meaningful === false
+        ? parsed.meaningful
+        : true;
     return {
-      meaningful: Boolean(parsed.meaningful),
+      meaningful,
       confidence:
         parsed.confidence === "high" ||
         parsed.confidence === "medium" ||
