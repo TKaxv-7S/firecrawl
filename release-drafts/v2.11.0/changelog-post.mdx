@@ -1,0 +1,25 @@
+---
+title: "v2.11.0 is live"
+date: "May 29, 2026"
+description: "Firecrawl v2.11.0 adds LLM-judged monitor goals, JSON-mode diffs and snapshots, an email confirmation flow, AM/PM schedules, and a wide round of SDK and billing fixes."
+---
+
+## v2.11.0 is live
+
+Firecrawl v2.11.0 makes the Monitor API a lot smarter: per-monitor goals route every diff through an LLM judge that filters noise, JSON-mode diffs land with snapshots typed across every SDK, and external email recipients now go through an opt-in confirmation flow. We also raised the PDF size cap, fixed crawl billing under Autumn overage, added V1-compatible aliases on the V2 SDKs, and patched a fresh batch of CVEs.
+
+### Highlights
+
+- **Monitor goals with LLM judge** — Set `goal` and `judgeEnabled` on a monitor and every changed page is classified as meaningful vs noise, sorted into summary emails with the unified diff rendered inline. Typed in JS, Python, Java, .NET, Go, PHP, Ruby, Rust, and Elixir SDKs.
+- **Monitor JSON diffs and snapshots** — Monitors using `{type: "json"}` or `{type: "changeTracking", modes: ["json"]}` now diff structured fields against the previous run and persist a `snapshot.json` of current values, surfaced through `GET /v2/monitor/:id/checks/:checkId`.
+- **Mixed-mode change tracking** — Requesting both `["json", "git-diff"]` modes now runs both diffs and reports `changed` if either side changes, with the markdown unified diff attached as a sidecar on the JSON artifact.
+- **Monitor email confirmation** — External monitor recipients now confirm opt-in before they receive alerts and get a one-click unsubscribe link in every summary email; team members are auto-confirmed.
+- **AM/PM monitor schedules** — Daily schedule strings like `daily at 9am` or `daily at 5:30pm` are accepted and converted to the right UTC cron.
+- **Crawl cancel drains the concurrency backlog** — Canceling a v1/v2 crawl or batch now removes queued job IDs from the per-team concurrency-limit queue and reports `cancelled` immediately, instead of leaving stuck backlog behind.
+- **PDF size cap raised to 50 MB** — PDF download and scrape payloads can now be up to 50 MB (up from 30 MB).
+- **V1 aliases on V2 SDKs** — Python and JS V2 clients now expose deprecated `scrape_url` / `scrapeUrl`, `crawl_url` / `crawlUrl`, and friends so V1-trained callers keep working without rewriting code.
+- **JS SDK string API key** — `new Firecrawl("fc-key")` now works alongside the object form, with whitespace-only keys rejected up front.
+- **Crawl billing under Autumn overage** — Crawls no longer silently get their `limit` clamped to 0 when a team has 0 credits but Autumn allows the request via overage.
+- **CVE patches** — Resolved `ws` (GHSA-58qx-3vcg-4xpx), `brace-expansion` (GHSA-jxxr-4gwj-5jf2), `qs` (GHSA-Q8MJ-M7CP-5Q26), `uuid` (GHSA-W5HQ-G745-H8PQ), and `js-cookie` (GHSA-QJX8-664M-686J) across the API, JS SDK, Playwright service, test-suite, and ingestion UI.
+
+Read the full changelog [here](https://github.com/firecrawl/firecrawl/releases/tag/v2.11.0).
