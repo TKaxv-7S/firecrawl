@@ -2155,6 +2155,103 @@ export type SearchFeedbackResponse =
       warning?: string;
     };
 
+// =============================================
+// Generic Endpoint Feedback
+// =============================================
+
+const endpointFeedbackEndpointSchema = z.enum([
+  "search",
+  "scrape",
+  "parse",
+  "map",
+]);
+
+export type EndpointFeedbackEndpoint = z.infer<
+  typeof endpointFeedbackEndpointSchema
+>;
+
+const feedbackIssueSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(
+    /^[a-z0-9][a-z0-9_-]*$/,
+    "Issue codes must use lowercase letters, numbers, underscores, or hyphens",
+  );
+
+export const endpointFeedbackSchema = z
+  .strictObject({
+    endpoint: endpointFeedbackEndpointSchema,
+    jobId: z.uuid(),
+    rating: z.enum(["good", "bad", "partial"]),
+    issues: z.array(feedbackIssueSchema).max(20).optional(),
+    tags: z.array(feedbackIssueSchema).max(20).optional(),
+    note: z.string().trim().max(4000).optional(),
+    valuableSources: z
+      .array(
+        z.strictObject({
+          url: searchFeedbackUrlSchema,
+          reason: z.string().trim().max(1000).optional(),
+        }),
+      )
+      .max(50)
+      .optional(),
+    missingContent: z.array(missingContentEntrySchema).max(50).optional(),
+    querySuggestions: z.string().trim().max(2000).optional(),
+    expected: z.unknown().optional(),
+    actual: z.unknown().optional(),
+    url: searchFeedbackUrlSchema.optional(),
+    pageNumbers: z.array(z.number().int().positive()).max(100).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    origin: z.string().optional().prefault("api"),
+    integration: integrationSchema.optional().transform(val => val || null),
+  })
+  .refine(
+    data => {
+      return (
+        (data.issues?.length ?? 0) > 0 ||
+        (data.tags?.length ?? 0) > 0 ||
+        (data.note?.length ?? 0) > 0 ||
+        (data.valuableSources?.length ?? 0) > 0 ||
+        (data.missingContent?.length ?? 0) > 0 ||
+        !!data.querySuggestions ||
+        data.expected !== undefined ||
+        data.actual !== undefined ||
+        !!data.url ||
+        (data.pageNumbers?.length ?? 0) > 0
+      );
+    },
+    {
+      message:
+        "Feedback must include at least one substantive signal: issues, note, sources, missingContent, querySuggestions, expected/actual, url, or pageNumbers.",
+    },
+  );
+
+export type EndpointFeedbackRequest = z.infer<typeof endpointFeedbackSchema>;
+
+export type EndpointFeedbackErrorCode =
+  | "JOB_NOT_FOUND"
+  | "FEEDBACK_WINDOW_EXPIRED"
+  | "PREVIEW_TEAM_NOT_ALLOWED"
+  | "TEAM_OPTED_OUT"
+  | "INVALID_BODY"
+  | "DB_DISABLED"
+  | "INTERNAL";
+
+export type EndpointFeedbackResponse =
+  | (ErrorResponse & { feedbackErrorCode?: EndpointFeedbackErrorCode })
+  | {
+      success: true;
+      feedbackId: string;
+      creditsRefunded: number;
+      alreadySubmitted?: boolean;
+      dailyCapReached?: boolean;
+      creditsRefundedToday?: number;
+      dailyRefundCap?: number;
+      warning?: string;
+    };
+
 export type TokenUsage = {
   promptTokens: number;
   completionTokens: number;
